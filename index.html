@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FoldStudio - Cloud APK Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0d1117; color: #e6edf3; font-family: system-ui, -apple-system, sans-serif; }
+    textarea { font-family: 'Courier New', Courier, monospace; tab-size: 4; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+  <!-- Barra Superiore -->
+  <header class="bg-[#161b22] border-b border-[#30363d] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <div class="w-3 h-3 rounded-full bg-[#1DB954] animate-pulse"></div>
+      <h1 class="font-bold text-lg tracking-wide">FoldStudio <span class="text-xs bg-[#238636] text-white px-2 py-0.5 rounded-full ml-1">Z Fold Edition</span></h1>
+    </div>
+
+    <div class="flex items-center gap-2 flex-1 max-w-2xl justify-end">
+      <input id="ghToken" type="password" placeholder="Incolla GitHub Token (ghp_...)" 
+        class="bg-[#0d1117] border border-[#30363d] rounded px-3 py-1.5 text-sm w-56 focus:outline-none focus:border-[#1DB954]">
+      <input id="repoName" type="text" value="SpotFree-Android" placeholder="Nome Progetto" 
+        class="bg-[#0d1117] border border-[#30363d] rounded px-3 py-1.5 text-sm w-40 focus:outline-none focus:border-[#1DB954]">
+      <button onclick="startCloudBuild()" id="buildBtn"
+        class="bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold px-4 py-1.5 rounded text-sm transition flex items-center gap-2 shadow-lg">
+        <span>⚡ GENERA APK IN CLOUD</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Area Principale Split-View per Z Fold -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- Colonna Sinistra: Esplora File + Console Cloud -->
+    <aside class="w-1/3 max-w-xs bg-[#161b22] border-r border-[#30363d] flex flex-col justify-between">
+      <div class="p-3 overflow-y-auto">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-semibold uppercase text-gray-400">File del Progetto</span>
+          <button onclick="addNewFile()" class="text-xs text-[#1DB954] hover:underline">+ Nuovo File</button>
+        </div>
+        <ul id="fileList" class="space-y-1 text-sm"></ul>
+      </div>
+
+      <!-- Box Stato Cloud Build -->
+      <div class="p-3 border-t border-[#30363d] bg-[#0d1117]">
+        <div class="text-xs font-semibold uppercase text-gray-400 mb-2">Stato Compilatore Cloud</div>
+        <div id="statusLog" class="text-xs text-gray-300 h-36 overflow-y-auto space-y-1 font-mono bg-[#161b22] p-2 rounded border border-[#30363d]">
+          <div>Pronto. Inserisci il tuo Token GitHub e premi "Genera APK".</div>
+        </div>
+        <div id="downloadContainer" class="mt-2 hidden">
+          <a id="downloadLink" href="#" target="_blank"
+            class="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded text-sm">
+            📥 SCARICA APK PRONTO
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Colonna Destra: Editor Codice -->
+    <main class="flex-1 flex flex-col bg-[#0d1117]">
+      <div class="bg-[#161b22] px-4 py-2 border-b border-[#30363d] flex justify-between items-center">
+        <span id="currentFileName" class="text-sm font-mono text-[#1DB954]">Seleziona un file</span>
+        <span class="text-xs text-gray-400">Salvataggio automatico in memoria</span>
+      </div>
+      <textarea id="codeEditor" oninput="saveCurrentFile()"
+        class="flex-1 w-full bg-[#0d1117] text-gray-200 p-4 text-sm focus:outline-none resize-none leading-relaxed"
+        spellcheck="false"></textarea>
+    </main>
+
+  </div>
+
+<script>
+// --- IL PROGETTO COMPLETO PRECARICATO (SpotFree + Android Auto + Cloud Builder) ---
+const projectFiles = {
+  ".github/workflows/build.yml": `name: Build SpotFree APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codice
+        uses: actions/checkout@v4
+
+      - name: Configura JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configura Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      - name: Compila APK Debug
+        run: gradle assembleDebug --no-daemon
+
+      - name: Carica APK pronto
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpotFree-APK
+          path: app/build/outputs/apk/debug/app-debug.apk`,
+
+  "settings.gradle.kts": `pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+rootProject.name = "SpotFree"
+include(":app")`,
+
+  "build.gradle.kts": `plugins {
+    id("com.android.application") version "8.4.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.23" apply false
+}`,
+
+  "gradle.properties": `org.gradle.jvmargs=-Xmx3072m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true`,
+
+  "app/build.gradle.kts": `plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.example.spotfree"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.example.spotfree"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildFeatures { compose = true }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.11" }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+}
+
+dependencies {
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation(platform("androidx.compose:compose-bom:2024.05.00"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-session:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.8.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.github.teamnewpipe:NewPipeExtractor:v0.24.2")
+}`,
+
+  "app/src/main/res/xml/automotive_app_desc.xml": `<?xml version="1.0" encoding="utf-8"?>
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>`,
+
+  "app/src/main/AndroidManifest.xml": `<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <application
+        android:allowBackup="true"
+        android:label="SpotFree"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".PlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>`,
+
+  "app/src/main/java/com/example/spotfree/AdFreeMusicEngine.kt": `// INCOLLA QUI IL CODICE DI AdFreeMusicEngine.kt DEL MESSAGGIO PRECEDENTE`,
+  "app/src/main/java/com/example/spotfree/PlaybackService.kt": `// INCOLLA QUI IL CODICE DI PlaybackService.kt (Android Auto) DEL MESSAGGIO PRECEDENTE`,
+  "app/src/main/java/com/example/spotfree/MainActivity.kt": `// INCOLLA QUI IL CODICE DI MainActivity.kt DEL MESSAGGIO PRECEDENTE`
+};
+
+let activeFile = "app/build.gradle.kts";
+
+function renderFileList() {
+  const list = document.getElementById("fileList");
+  list.innerHTML = "";
+  Object.keys(projectFiles).forEach(path => {
+    const li = document.createElement("li");
+    li.className = "px-2 py-1.5 rounded cursor-pointer truncate " + 
+      (path === activeFile ? "bg-[#238636] text-white font-semibold" : "text-gray-300 hover:bg-[#30363d]");
+    li.textContent = path;
+    li.onclick = () => selectFile(path);
+    list.appendChild(li);
+  });
+}
+
+function selectFile(path) {
+  activeFile = path;
+  document.getElementById("currentFileName").textContent = path;
+  document.getElementById("codeEditor").value = projectFiles[path];
+  renderFileList();
+}
+
+function saveCurrentFile() {
+  projectFiles[activeFile] = document.getElementById("codeEditor").value;
+}
+
+function addNewFile() {
+  const path = prompt("Inserisci il percorso del nuovo file (es. app/src/main/java/com/example/spotfree/Nuovo.kt):");
+  if (path && !projectFiles[path]) {
+    projectFiles[path] = "";
+    selectFile(path);
+  }
+}
+
+function logStatus(msg) {
+  const box = document.getElementById("statusLog");
+  const line = document.createElement("div");
+  line.textContent = "> " + msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function toBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+async function ghApi(url, method, token, body = null) {
+  const headers = {
+    "Authorization": "Bearer " + token,
+    "Accept": "application/vnd.github+json"
+  };
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch("https://api.github.com" + url, opts);
+}
+
+async function startCloudBuild() {
+  const token = document.getElementById("ghToken").value.trim();
+  const repo = document.getElementById("repoName").value.trim();
+  if (!token) return alert("Inserisci il tuo GitHub Personal Access Token!");
+
+  localStorage.setItem("foldstudio_token", token);
+  const btn = document.getElementById("buildBtn");
+  btn.disabled = true;
+  btn.classList.add("opacity-50");
+  document.getElementById("downloadContainer").classList.add("hidden");
+
+  try {
+    logStatus("Connessione a GitHub...");
+    const userRes = await ghApi("/user", "GET", token);
+    if (!userRes.ok) throw new Error("Token non valido!");
+    const user = await userRes.json();
+    const owner = user.login;
+    logStatus("Autenticato come: " + owner);
+
+    // 1. Crea il repository se non esiste
+    logStatus("Verifica/Creazione repository " + repo + "...");
+    await ghApi("/user/repos", "POST", token, { name: repo, private: true, auto_init: true });
+
+    // 2. Carica tutti i file del progetto
+    for (const [path, content] of Object.entries(projectFiles)) {
+      logStatus("Invio file: " + path);
+      let sha = null;
+      const existing = await ghApi(\`/repos/\${owner}/\${repo}/contents/\${path}\`, "GET", token);
+      if (existing.ok) {
+        const data = await existing.json();
+        sha = data.sha;
+      }
+      const payload = { message: "Update " + path + " via FoldStudio", content: toBase64(content) };
+      if (sha) payload.sha = sha;
+      const putRes = await ghApi(\`/repos/\${owner}/\${repo}/contents/\${path}\`, "PUT", token, payload);
+      if (!putRes.ok) throw new Error("Errore caricamento " + path);
+    }
+
+    logStatus("Codice inviato! Avvio compilazione cloud...");
+    await ghApi(\`/repos/\${owner}/\${repo}/actions/workflows/build.yml/dispatches\`, "POST", token, { ref: "main" });
+
+    // 3. Monitora la compilazione ogni 6 secondi
+    logStatus("Server cloud attivo (richiede ~90 sec)...");
+    let completed = false;
+    while (!completed) {
+      await new Promise(r => setTimeout(r, 6000));
+      const runsRes = await ghApi(\`/repos/\${owner}/\${repo}/actions/runs?per_page=1\`, "GET", token);
+      const runsData = await runsRes.json();
+      const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
+
+      if (latestRun) {
+        logStatus("Stato: " + latestRun.status + "...");
+        if (latestRun.status === "completed") {
+          completed = true;
+          if (latestRun.conclusion === "success") {
+            logStatus("✅ APK GENERATO CON SUCCESSO!");
+            const dlLink = document.getElementById("downloadLink");
+            dlLink.href = latestRun.html_url;
+            document.getElementById("downloadContainer").classList.remove("hidden");
+          } else {
+            logStatus("❌ Errore di compilazione. Apri il link per i dettagli: " + latestRun.html_url);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    logStatus("ERRORE: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("opacity-50");
+  }
+}
+
+// Avvio iniziale
+window.onload = () => {
+  const saved = localStorage.getItem("foldstudio_token");
+  if (saved) document.getElementById("ghToken").value = saved;
+  selectFile(activeFile);
+};
+</script>
+</body>
+</html>

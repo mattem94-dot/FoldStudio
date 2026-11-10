@@ -14,18 +14,17 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-  <!-- Barra Superiore -->
   <header class="bg-[#161b22] border-b border-[#30363d] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-2">
       <div class="w-3 h-3 rounded-full bg-[#1DB954] animate-pulse"></div>
-      <h1 class="font-bold text-lg tracking-wide">FoldStudio <span class="text-xs bg-[#238636] text-white px-2 py-0.5 rounded-full ml-1">Z Fold Edition</span></h1>
+      <h1 class="font-bold text-lg tracking-wide">FoldStudio <span class="text-xs bg-[#238636] text-white px-2 py-0.5 rounded-full ml-1">Z Fold Ready</span></h1>
     </div>
 
     <div class="flex items-center gap-2 flex-1 max-w-2xl justify-end">
       <input id="ghToken" type="password" placeholder="Incolla GitHub Token (ghp_...)" 
-        class="bg-[#0d1117] border border-[#30363d] rounded px-3 py-1.5 text-sm w-56 focus:outline-none focus:border-[#1DB954]">
+        class="bg-[#0d1117] border border-[#30363d] rounded px-3 py-1.5 text-sm w-48 focus:outline-none focus:border-[#1DB954]">
       <input id="repoName" type="text" value="SpotFree-Android" placeholder="Nome Progetto" 
-        class="bg-[#0d1117] border border-[#30363d] rounded px-3 py-1.5 text-sm w-40 focus:outline-none focus:border-[#1DB954]">
+        class="bg-[#0d1117] border border-[#30363d] rounded px-3 py-1.5 text-sm w-36 focus:outline-none focus:border-[#1DB954]">
       <button onclick="startCloudBuild()" id="buildBtn"
         class="bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold px-4 py-1.5 rounded text-sm transition flex items-center gap-2 shadow-lg">
         <span>⚡ GENERA APK IN CLOUD</span>
@@ -33,210 +32,475 @@
     </div>
   </header>
 
-  <!-- Area Principale Split-View per Z Fold -->
   <div class="flex-1 flex overflow-hidden">
-    
-    <!-- Colonna Sinistra: Esplora File + Console Cloud -->
     <aside class="w-1/3 max-w-xs bg-[#161b22] border-r border-[#30363d] flex flex-col justify-between">
       <div class="p-3 overflow-y-auto">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-semibold uppercase text-gray-400">File del Progetto</span>
+          <span class="text-xs font-semibold uppercase text-gray-400">File del Progetto (9)</span>
           <button onclick="addNewFile()" class="text-xs text-[#1DB954] hover:underline">+ Nuovo File</button>
         </div>
         <ul id="fileList" class="space-y-1 text-sm"></ul>
       </div>
 
-      <!-- Box Stato Cloud Build -->
       <div class="p-3 border-t border-[#30363d] bg-[#0d1117]">
         <div class="text-xs font-semibold uppercase text-gray-400 mb-2">Stato Compilatore Cloud</div>
         <div id="statusLog" class="text-xs text-gray-300 h-36 overflow-y-auto space-y-1 font-mono bg-[#161b22] p-2 rounded border border-[#30363d]">
-          <div>Pronto. Inserisci il tuo Token GitHub e premi "Genera APK".</div>
+          <div>Tutti i 9 file di SpotFree sono precaricati! Inserisci il Token in alto e premi Genera APK.</div>
         </div>
         <div id="downloadContainer" class="mt-2 hidden">
           <a id="downloadLink" href="#" target="_blank"
             class="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded text-sm">
-            📥 SCARICA APK PRONTO
+            📥 VAI ALLA PAGINA DI DOWNLOAD APK
           </a>
         </div>
       </div>
     </aside>
 
-    <!-- Colonna Destra: Editor Codice -->
     <main class="flex-1 flex flex-col bg-[#0d1117]">
       <div class="bg-[#161b22] px-4 py-2 border-b border-[#30363d] flex justify-between items-center">
         <span id="currentFileName" class="text-sm font-mono text-[#1DB954]">Seleziona un file</span>
-        <span class="text-xs text-gray-400">Salvataggio automatico in memoria</span>
+        <span class="text-xs text-gray-400">Pronto per la compilazione</span>
       </div>
       <textarea id="codeEditor" oninput="saveCurrentFile()"
         class="flex-1 w-full bg-[#0d1117] text-gray-200 p-4 text-sm focus:outline-none resize-none leading-relaxed"
         spellcheck="false"></textarea>
     </main>
-
   </div>
 
 <script>
-// --- IL PROGETTO COMPLETO PRECARICATO (SpotFree + Android Auto + Cloud Builder) ---
-const projectFiles = {
-  ".github/workflows/build.yml": `name: Build SpotFree APK
-on:
-  workflow_dispatch:
-  push:
-    branches: [ "main" ]
+const projectFiles = {};
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout codice
-        uses: actions/checkout@v4
+projectFiles[".github/workflows/build.yml"] = [
+  "name: Build SpotFree APK",
+  "on:",
+  "  workflow_dispatch:",
+  "  push:",
+  "    branches: [ 'main' ]",
+  "jobs:",
+  "  build:",
+  "    runs-on: ubuntu-latest",
+  "    steps:",
+  "      - name: Checkout codice",
+  "        uses: actions/checkout@v4",
+  "      - name: Configura JDK 17",
+  "        uses: actions/setup-java@v4",
+  "        with:",
+  "          distribution: 'temurin'",
+  "          java-version: '17'",
+  "      - name: Configura Gradle",
+  "        uses: gradle/actions/setup-gradle@v3",
+  "        with:",
+  "          gradle-version: '8.7'",
+  "      - name: Compila APK Debug",
+  "        run: gradle assembleDebug --no-daemon",
+  "      - name: Carica APK pronto",
+  "        uses: actions/upload-artifact@v4",
+  "        with:",
+  "          name: SpotFree-APK",
+  "          path: app/build/outputs/apk/debug/app-debug.apk"
+].join("\n");
 
-      - name: Configura JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+projectFiles["settings.gradle.kts"] = [
+  "pluginManagement {",
+  "    repositories { google(); mavenCentral(); gradlePluginPortal() }",
+  "}",
+  "dependencyResolutionManagement {",
+  "    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)",
+  "    repositories {",
+  "        google()",
+  "        mavenCentral()",
+  "        maven { url = uri(\"https://jitpack.io\") }",
+  "    }",
+  "}",
+  "rootProject.name = \"SpotFree\"",
+  "include(\":app\")"
+].join("\n");
 
-      - name: Configura Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.7'
+projectFiles["build.gradle.kts"] = [
+  "plugins {",
+  "    id(\"com.android.application\") version \"8.4.0\" apply false",
+  "    id(\"org.jetbrains.kotlin.android\") version \"1.9.23\" apply false",
+  "}"
+].join("\n");
 
-      - name: Compila APK Debug
-        run: gradle assembleDebug --no-daemon
+projectFiles["gradle.properties"] = [
+  "org.gradle.jvmargs=-Xmx3072m -Dfile.encoding=UTF-8",
+  "android.useAndroidX=true",
+  "kotlin.code.style=official",
+  "android.nonTransitiveRClass=true"
+].join("\n");
 
-      - name: Carica APK pronto
-        uses: actions/upload-artifact@v4
-        with:
-          name: SpotFree-APK
-          path: app/build/outputs/apk/debug/app-debug.apk`,
+projectFiles["app/build.gradle.kts"] = [
+  "plugins {",
+  "    id(\"com.android.application\")",
+  "    id(\"org.jetbrains.kotlin.android\")",
+  "}",
+  "android {",
+  "    namespace = \"com.example.spotfree\"",
+  "    compileSdk = 34",
+  "    defaultConfig {",
+  "        applicationId = \"com.example.spotfree\"",
+  "        minSdk = 26",
+  "        targetSdk = 34",
+  "        versionCode = 1",
+  "        versionName = \"1.0\"",
+  "    }",
+  "    buildFeatures { compose = true }",
+  "    composeOptions { kotlinCompilerExtensionVersion = \"1.5.11\" }",
+  "    compileOptions {",
+  "        sourceCompatibility = JavaVersion.VERSION_17",
+  "        targetCompatibility = JavaVersion.VERSION_17",
+  "    }",
+  "    kotlinOptions { jvmTarget = \"17\" }",
+  "}",
+  "dependencies {",
+  "    implementation(\"androidx.core:core-ktx:1.13.1\")",
+  "    implementation(\"androidx.lifecycle:lifecycle-runtime-ktx:2.8.0\")",
+  "    implementation(\"androidx.activity:activity-compose:1.9.0\")",
+  "    implementation(platform(\"androidx.compose:compose-bom:2024.05.00\"))",
+  "    implementation(\"androidx.compose.ui:ui\")",
+  "    implementation(\"androidx.compose.material3:material3\")",
+  "    implementation(\"androidx.compose.material:material-icons-extended\")",
+  "    implementation(\"io.coil-kt:coil-compose:2.6.0\")",
+  "    implementation(\"androidx.media3:media3-exoplayer:1.3.1\")",
+  "    implementation(\"androidx.media3:media3-session:1.3.1\")",
+  "    implementation(\"androidx.media3:media3-ui:1.3.1\")",
+  "    implementation(\"org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.8.0\")",
+  "    implementation(\"com.squareup.okhttp3:okhttp:4.12.0\")",
+  "    implementation(\"com.github.teamnewpipe:NewPipeExtractor:v0.24.2\")",
+  "}"
+].join("\n");
 
-  "settings.gradle.kts": `pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-rootProject.name = "SpotFree"
-include(":app")`,
+projectFiles["app/src/main/res/xml/automotive_app_desc.xml"] = [
+  "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+  "<automotiveApp>",
+  "    <uses name=\"media\" />",
+  "</automotiveApp>"
+].join("\n");
 
-  "build.gradle.kts": `plugins {
-    id("com.android.application") version "8.4.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.23" apply false
-}`,
+projectFiles["app/src/main/AndroidManifest.xml"] = [
+  "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+  "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">",
+  "    <uses-permission android:name=\"android.permission.INTERNET\" />",
+  "    <uses-permission android:name=\"android.permission.FOREGROUND_SERVICE\" />",
+  "    <uses-permission android:name=\"android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK\" />",
+  "    <application",
+  "        android:allowBackup=\"true\"",
+  "        android:label=\"SpotFree\"",
+  "        android:supportsRtl=\"true\"",
+  "        android:theme=\"@android:style/Theme.Material.NoActionBar\">",
+  "        <meta-data android:name=\"com.google.android.gms.car.application\" android:resource=\"@xml/automotive_app_desc\" />",
+  "        <activity android:name=\".MainActivity\" android:exported=\"true\">",
+  "            <intent-filter>",
+  "                <action android:name=\"android.intent.action.MAIN\" />",
+  "                <category android:name=\"android.intent.category.LAUNCHER\" />",
+  "            </intent-filter>",
+  "        </activity>",
+  "        <service android:name=\".PlaybackService\" android:exported=\"true\" android:foregroundServiceType=\"mediaPlayback\">",
+  "            <intent-filter>",
+  "                <action android:name=\"androidx.media3.session.MediaLibraryService\" />",
+  "                <action android:name=\"android.media.browse.MediaBrowserService\" />",
+  "            </intent-filter>",
+  "        </service>",
+  "    </application>",
+  "</manifest>"
+].join("\n");
 
-  "gradle.properties": `org.gradle.jvmargs=-Xmx3072m -Dfile.encoding=UTF-8
-android.useAndroidX=true
-kotlin.code.style=official
-android.nonTransitiveRClass=true`,
+projectFiles["app/src/main/java/com/example/spotfree/AdFreeMusicEngine.kt"] = [
+  "package com.example.spotfree",
+  "import kotlinx.coroutines.Dispatchers",
+  "import kotlinx.coroutines.withContext",
+  "import okhttp3.OkHttpClient",
+  "import okhttp3.Request",
+  "import okhttp3.RequestBody.Companion.toRequestBody",
+  "import org.json.JSONObject",
+  "import org.schabi.newpipe.extractor.NewPipe",
+  "import org.schabi.newpipe.extractor.ServiceList",
+  "import org.schabi.newpipe.extractor.downloader.Downloader",
+  "import org.schabi.newpipe.extractor.downloader.Response",
+  "import org.schabi.newpipe.extractor.localization.Localization",
+  "import org.schabi.newpipe.extractor.stream.StreamInfo",
+  "import org.schabi.newpipe.extractor.stream.StreamInfoItem",
+  "import java.net.URLEncoder",
+  "import java.util.concurrent.TimeUnit",
+  "",
+  "data class MusicTrack(val id: String, val title: String, val artist: String, val album: String, val coverUrl: String, val durationMs: Long)",
+  "",
+  "object AdFreeMusicEngine {",
+  "    private var isInitialized = false",
+  "    val favoriteTracks = mutableListOf<MusicTrack>()",
+  "    private val httpClient = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS).build()",
+  "",
+  "    fun init() {",
+  "        if (isInitialized) return",
+  "        NewPipe.init(object : Downloader() {",
+  "            override fun execute(request: org.schabi.newpipe.extractor.downloader.Request): Response {",
+  "                val builder = Request.Builder().url(request.url())",
+  "                request.headers().forEach { (k, v) -> v.forEach { builder.addHeader(k, it) } }",
+  "                builder.header(\"User-Agent\", \"Mozilla/5.0\")",
+  "                val body = request.dataToSend()?.toRequestBody(null)",
+  "                builder.method(request.httpMethod(), body)",
+  "                val res = httpClient.newCall(builder.build()).execute()",
+  "                return Response(res.code, res.message, res.headers.toMultimap(), res.body?.string() ?: \"\", res.request.url.toString())",
+  "            }",
+  "        }, Localization.DEFAULT)",
+  "        isInitialized = true",
+  "    }",
+  "",
+  "    suspend fun searchCatalog(query: String): List<MusicTrack> = withContext(Dispatchers.IO) {",
+  "        init()",
+  "        val tracks = mutableListOf<MusicTrack>()",
+  "        try {",
+  "            val encoded = URLEncoder.encode(query, \"UTF-8\")",
+  "            val req = Request.Builder().url(\"https://itunes.apple.com/search?term=\" + encoded + \"&media=music&entity=song&limit=25\").build()",
+  "            val res = httpClient.newCall(req).execute()",
+  "            val results = JSONObject(res.body?.string() ?: \"\").optJSONArray(\"results\") ?: return@withContext emptyList()",
+  "            for (i in 0 until results.length()) {",
+  "                val item = results.getJSONObject(i)",
+  "                val cover = item.optString(\"artworkUrl100\").replace(\"100x100bb\", \"600x600bb\")",
+  "                tracks.add(MusicTrack(item.optString(\"trackId\"), item.optString(\"trackName\"), item.optString(\"artistName\"), item.optString(\"collectionName\"), cover, item.optLong(\"trackTimeMillis\", 180000L)))",
+  "            }",
+  "        } catch (e: Exception) { e.printStackTrace() }",
+  "        tracks",
+  "    }",
+  "",
+  "    suspend fun extractDirectAudioUrl(track: MusicTrack): String? = withContext(Dispatchers.IO) {",
+  "        init()",
+  "        try {",
+  "            val yt = ServiceList.YouTube",
+  "            val extractor = yt.getSearchExtractor(track.artist + \" - \" + track.title + \" Official Audio\")",
+  "            extractor.fetchPage()",
+  "            val first = extractor.initialPage.items.filterIsInstance<StreamInfoItem>().firstOrNull() ?: return@withContext null",
+  "            StreamInfo.getInfo(yt, first.url).audioStreams.maxByOrNull { it.averageBitrate }?.content",
+  "        } catch (e: Exception) { null }",
+  "    }",
+  "}"
+].join("\n");
 
-  "app/build.gradle.kts": `plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-}
+projectFiles["app/src/main/java/com/example/spotfree/PlaybackService.kt"] = [
+  "package com.example.spotfree",
+  "import android.content.Intent",
+  "import android.net.Uri",
+  "import androidx.media3.common.AudioAttributes",
+  "import androidx.media3.common.C",
+  "import androidx.media3.common.MediaItem",
+  "import androidx.media3.common.MediaMetadata",
+  "import androidx.media3.exoplayer.ExoPlayer",
+  "import androidx.media3.session.LibraryResult",
+  "import androidx.media3.session.MediaLibraryService",
+  "import androidx.media3.session.MediaSession",
+  "import com.google.common.collect.ImmutableList",
+  "import com.google.common.util.concurrent.Futures",
+  "import com.google.common.util.concurrent.ListenableFuture",
+  "import kotlinx.coroutines.CoroutineScope",
+  "import kotlinx.coroutines.Dispatchers",
+  "import kotlinx.coroutines.SupervisorJob",
+  "import kotlinx.coroutines.guava.future",
+  "",
+  "class PlaybackService : MediaLibraryService() {",
+  "    private var session: MediaLibrarySession? = null",
+  "    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)",
+  "    private val cache = mutableMapOf<String, MusicTrack>()",
+  "",
+  "    override fun onCreate() {",
+  "        super.onCreate()",
+  "        val attr = AudioAttributes.Builder().setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).setUsage(C.USAGE_MEDIA).build()",
+  "        val player = ExoPlayer.Builder(this).setAudioAttributes(attr, true).setHandleAudioBecomingNoisy(true).build()",
+  "        session = MediaLibrarySession.Builder(this, player, AutoCallback()).build()",
+  "    }",
+  "    override fun onGetSession(info: MediaSession.ControllerInfo) = session",
+  "",
+  "    private inner class AutoCallback : MediaLibrarySession.Callback {",
+  "        override fun onGetLibraryRoot(s: MediaLibrarySession, b: MediaSession.ControllerInfo, p: LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> {",
+  "            val root = MediaItem.Builder().setMediaId(\"root\").setMediaMetadata(MediaMetadata.Builder().setIsBrowsable(true).setIsPlayable(false).setTitle(\"SpotFree\").build()).build()",
+  "            return Futures.immediateFuture(LibraryResult.ofItem(root, p))",
+  "        }",
+  "        override fun onGetChildren(s: MediaLibrarySession, b: MediaSession.ControllerInfo, parentId: String, page: Int, size: Int, p: LibraryParams?): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = scope.future(Dispatchers.IO) {",
+  "            when (parentId) {",
+  "                \"root\" -> LibraryResult.ofItemList(listOf(tab(\"hits\", \"Top Hits Italia\"), tab(\"fav\", \"La tua libreria\")), p)",
+  "                \"hits\" -> {",
+  "                    val list = AdFreeMusicEngine.searchCatalog(\"Top Hits Italia\")",
+  "                    list.forEach { cache[it.id] = it }",
+  "                    LibraryResult.ofItemList(list.map { it.toMedia() }, p)",
+  "                }",
+  "                \"fav\" -> LibraryResult.ofItemList(AdFreeMusicEngine.favoriteTracks.map { it.toMedia() }, p)",
+  "                else -> LibraryResult.ofItemList(emptyList(), p)",
+  "            }",
+  "        }",
+  "        override fun onAddMediaItems(s: MediaSession, c: MediaSession.ControllerInfo, items: MutableList<MediaItem>): ListenableFuture<List<MediaItem>> = scope.future(Dispatchers.IO) {",
+  "            items.map {",
+  "                if (it.localConfiguration?.uri != null) it else {",
+  "                    val t = cache[it.mediaId] ?: MusicTrack(it.mediaId, it.mediaMetadata.title.toString(), it.mediaMetadata.artist.toString(), \"\", \"\", 180000L)",
+  "                    val url = AdFreeMusicEngine.extractDirectAudioUrl(t) ?: \"\"",
+  "                    it.buildUpon().setUri(url).build()",
+  "                }",
+  "            }",
+  "        }",
+  "    }",
+  "    private fun tab(id: String, title: String) = MediaItem.Builder().setMediaId(id).setMediaMetadata(MediaMetadata.Builder().setTitle(title).setIsBrowsable(true).setIsPlayable(false).build()).build()",
+  "    private fun MusicTrack.toMedia() = MediaItem.Builder().setMediaId(id).setMediaMetadata(MediaMetadata.Builder().setTitle(title).setArtist(artist).setArtworkUri(Uri.parse(coverUrl)).setIsBrowsable(false).setIsPlayable(true).build()).build()",
+  "    override fun onDestroy() { session?.run { player.release(); release() }; super.onDestroy() }",
+  "}"
+].join("\n");
 
-android {
-    namespace = "com.example.spotfree"
-    compileSdk = 34
+projectFiles["app/src/main/java/com/example/spotfree/MainActivity.kt"] = [
+  "package com.example.spotfree",
+  "import android.content.ComponentName",
+  "import android.net.Uri",
+  "import android.os.Bundle",
+  "import androidx.activity.ComponentActivity",
+  "import androidx.activity.compose.setContent",
+  "import androidx.compose.foundation.background",
+  "import androidx.compose.foundation.clickable",
+  "import androidx.compose.foundation.layout.*",
+  "import androidx.compose.foundation.lazy.LazyColumn",
+  "import androidx.compose.foundation.lazy.items",
+  "import androidx.compose.foundation.shape.RoundedCornerShape",
+  "import androidx.compose.material.icons.Icons",
+  "import androidx.compose.material.icons.filled.*",
+  "import androidx.compose.material3.*",
+  "import androidx.compose.runtime.*",
+  "import androidx.compose.ui.Alignment",
+  "import androidx.compose.ui.Modifier",
+  "import androidx.compose.ui.draw.clip",
+  "import androidx.compose.ui.graphics.Color",
+  "import androidx.compose.ui.layout.ContentScale",
+  "import androidx.compose.ui.platform.LocalContext",
+  "import androidx.compose.ui.text.font.FontWeight",
+  "import androidx.compose.ui.text.style.TextOverflow",
+  "import androidx.compose.ui.unit.dp",
+  "import androidx.compose.ui.unit.sp",
+  "import androidx.media3.common.MediaItem",
+  "import androidx.media3.common.MediaMetadata",
+  "import androidx.media3.common.Player",
+  "import androidx.media3.session.MediaController",
+  "import androidx.media3.session.SessionToken",
+  "import coil.compose.AsyncImage",
+  "import com.google.common.util.concurrent.MoreExecutors",
+  "import kotlinx.coroutines.delay",
+  "import kotlinx.coroutines.launch",
+  "",
+  "val SpotifyBlack = Color(0xFF121212)",
+  "val SpotifyGray = Color(0xFF282828)",
+  "val SpotifyGreen = Color(0xFF1DB954)",
+  "",
+  "class MainActivity : ComponentActivity() {",
+  "    override fun onCreate(savedInstanceState: Bundle?) {",
+  "        super.onCreate(savedInstanceState)",
+  "        setContent { MaterialTheme(colorScheme = darkColorScheme(background = SpotifyBlack)) { SpotFreeScreen() } }",
+  "    }",
+  "}",
+  "",
+  "@Composable",
+  "fun SpotFreeScreen() {",
+  "    val context = LocalContext.current",
+  "    val scope = rememberCoroutineScope()",
+  "    var tab by remember { mutableIntStateOf(0) }",
+  "    var controller by remember { mutableStateOf<MediaController?>(null) }",
+  "    var current by remember { mutableStateOf<MusicTrack?>(null) }",
+  "    var playing by remember { mutableStateOf(false) }",
+  "    var loading by remember { mutableStateOf(false) }",
+  "    var tracks by remember { mutableStateOf<List<MusicTrack>>(emptyList()) }",
+  "    var liked by remember { mutableStateOf<List<MusicTrack>>(emptyList()) }",
+  "    var query by remember { mutableStateOf(\"\") }",
+  "",
+  "    DisposableEffect(Unit) {",
+  "        val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))",
+  "        val future = MediaController.Builder(context, token).buildAsync()",
+  "        future.addListener({",
+  "            controller = future.get()?.apply {",
+  "                addListener(object : Player.Listener { override fun onIsPlayingChanged(p: Boolean) { playing = p } })",
+  "            }",
+  "        }, MoreExecutors.directExecutor())",
+  "        onDispose { MediaController.releaseFuture(future) }",
+  "    }",
+  "",
+  "    LaunchedEffect(Unit) { tracks = AdFreeMusicEngine.searchCatalog(\"Top Hits Italia\") }",
+  "",
+  "    fun play(t: MusicTrack) {",
+  "        current = t; loading = true",
+  "        scope.launch {",
+  "            val url = AdFreeMusicEngine.extractDirectAudioUrl(t)",
+  "            if (url != null) {",
+  "                val meta = MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist).setArtworkUri(Uri.parse(t.coverUrl)).build()",
+  "                controller?.setMediaItem(MediaItem.Builder().setUri(url).setMediaId(t.id).setMediaMetadata(meta).build())",
+  "                controller?.prepare(); controller?.play()",
+  "            }",
+  "            loading = false",
+  "        }",
+  "    }",
+  "",
+  "    Scaffold(",
+  "        containerColor = SpotifyBlack,",
+  "        bottomBar = {",
+  "            Column {",
+  "                current?.let { t ->",
+  "                    Row(Modifier.fillMaxWidth().padding(8.dp).clip(RoundedCornerShape(8.dp)).background(SpotifyGray).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {",
+  "                        AsyncImage(model = t.coverUrl, contentDescription = null, modifier = Modifier.size(42.dp).clip(RoundedCornerShape(4.dp)), contentScale = ContentScale.Crop)",
+  "                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {",
+  "                            Text(t.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)",
+  "                            Text(t.artist, color = Color.LightGray, fontSize = 12.sp, maxLines = 1)",
+  "                        }",
+  "                        IconButton(onClick = {",
+  "                            liked = if (liked.any { it.id == t.id }) liked.filterNot { it.id == t.id } else liked + t",
+  "                            AdFreeMusicEngine.favoriteTracks.clear(); AdFreeMusicEngine.favoriteTracks.addAll(liked)",
+  "                        }) { Icon(if (liked.any { it.id == t.id }) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = SpotifyGreen) }",
+  "                        IconButton(onClick = { if (playing) controller?.pause() else controller?.play() }) {",
+  "                            if (loading) CircularProgressIndicator(Modifier.size(20.dp), color = SpotifyGreen, strokeWidth = 2.dp)",
+  "                            else Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Color.White)",
+  "                        }",
+  "                    }",
+  "                }",
+  "                NavigationBar(containerColor = SpotifyBlack) {",
+  "                    NavigationBarItem(selected = tab == 0, onClick = { tab = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text(\"Home\") })",
+  "                    NavigationBarItem(selected = tab == 1, onClick = { tab = 1 }, icon = { Icon(Icons.Default.Search, null) }, label = { Text(\"Cerca\") })",
+  "                    NavigationBarItem(selected = tab == 2, onClick = { tab = 2 }, icon = { Icon(Icons.Default.LibraryMusic, null) }, label = { Text(\"Libreria\") })",
+  "                }",
+  "            }",
+  "        }",
+  "    ) { pad ->",
+  "        Column(Modifier.fillMaxSize().padding(pad).padding(horizontal = 16.dp)) {",
+  "            Spacer(Modifier.height(16.dp))",
+  "            if (tab == 1) {",
+  "                OutlinedTextField(",
+  "                    value = query,",
+  "                    onValueChange = { q -> query = q; scope.launch { delay(400); if (q.length > 1) tracks = AdFreeMusicEngine.searchCatalog(q) } },",
+  "                    placeholder = { Text(\"Cerca brani o artisti (Zero Pubblicità)...\") },",
+  "                    modifier = Modifier.fillMaxWidth()",
+  "                )",
+  "                Spacer(Modifier.height(12.dp))",
+  "            } else {",
+  "                Text(if (tab == 0) \"Solo Musica (Zero Podcast)\" else \"I tuoi brani preferiti\", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)",
+  "                Spacer(Modifier.height(12.dp))",
+  "            }",
+  "            val listToShow = if (tab == 2) liked else tracks",
+  "            LazyColumn(Modifier.fillMaxSize()) {",
+  "                items(listToShow) { t ->",
+  "                    Row(Modifier.fillMaxWidth().clickable { play(t) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {",
+  "                        AsyncImage(model = t.coverUrl, contentDescription = null, modifier = Modifier.size(50.dp).clip(RoundedCornerShape(4.dp)), contentScale = ContentScale.Crop)",
+  "                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {",
+  "                            Text(t.title, color = if (current?.id == t.id) SpotifyGreen else Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)",
+  "                            Text(t.artist + \" • \" + t.album, color = Color.Gray, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)",
+  "                        }",
+  "                    }",
+  "                }",
+  "            }",
+  "        }",
+  "    }",
+  "}"
+].join("\n");
 
-    defaultConfig {
-        applicationId = "com.example.spotfree"
-        minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
-    }
-
-    buildFeatures { compose = true }
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.11" }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions { jvmTarget = "17" }
-}
-
-dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
-    implementation("androidx.activity:activity-compose:1.9.0")
-    implementation(platform("androidx.compose:compose-bom:2024.05.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("androidx.media3:media3-exoplayer:1.3.1")
-    implementation("androidx.media3:media3-session:1.3.1")
-    implementation("androidx.media3:media3-ui:1.3.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.8.0")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.github.teamnewpipe:NewPipeExtractor:v0.24.2")
-}`,
-
-  "app/src/main/res/xml/automotive_app_desc.xml": `<?xml version="1.0" encoding="utf-8"?>
-<automotiveApp>
-    <uses name="media" />
-</automotiveApp>`,
-
-  "app/src/main/AndroidManifest.xml": `<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-
-    <application
-        android:allowBackup="true"
-        android:label="SpotFree"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
-
-        <meta-data
-            android:name="com.google.android.gms.car.application"
-            android:resource="@xml/automotive_app_desc" />
-
-        <activity android:name=".MainActivity" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <service
-            android:name=".PlaybackService"
-            android:exported="true"
-            android:foregroundServiceType="mediaPlayback">
-            <intent-filter>
-                <action android:name="androidx.media3.session.MediaLibraryService" />
-                <action android:name="android.media.browse.MediaBrowserService" />
-            </intent-filter>
-        </service>
-    </application>
-</manifest>`,
-
-  "app/src/main/java/com/example/spotfree/AdFreeMusicEngine.kt": `// INCOLLA QUI IL CODICE DI AdFreeMusicEngine.kt DEL MESSAGGIO PRECEDENTE`,
-  "app/src/main/java/com/example/spotfree/PlaybackService.kt": `// INCOLLA QUI IL CODICE DI PlaybackService.kt (Android Auto) DEL MESSAGGIO PRECEDENTE`,
-  "app/src/main/java/com/example/spotfree/MainActivity.kt": `// INCOLLA QUI IL CODICE DI MainActivity.kt DEL MESSAGGIO PRECEDENTE`
-};
-
-let activeFile = "app/build.gradle.kts";
+let activeFile = "app/src/main/java/com/example/spotfree/MainActivity.kt";
 
 function renderFileList() {
   const list = document.getElementById("fileList");
   list.innerHTML = "";
-  Object.keys(projectFiles).forEach(path => {
+  Object.keys(projectFiles).forEach(function(path) {
     const li = document.createElement("li");
     li.className = "px-2 py-1.5 rounded cursor-pointer truncate " + 
       (path === activeFile ? "bg-[#238636] text-white font-semibold" : "text-gray-300 hover:bg-[#30363d]");
     li.textContent = path;
-    li.onclick = () => selectFile(path);
+    li.onclick = function() { selectFile(path); };
     list.appendChild(li);
   });
 }
@@ -253,7 +517,7 @@ function saveCurrentFile() {
 }
 
 function addNewFile() {
-  const path = prompt("Inserisci il percorso del nuovo file (es. app/src/main/java/com/example/spotfree/Nuovo.kt):");
+  const path = prompt("Inserisci il percorso del nuovo file:");
   if (path && !projectFiles[path]) {
     projectFiles[path] = "";
     selectFile(path);
@@ -272,12 +536,12 @@ function toBase64(str) {
   return btoa(unescape(encodeURIComponent(str)));
 }
 
-async function ghApi(url, method, token, body = null) {
+async function ghApi(url, method, token, body) {
   const headers = {
     "Authorization": "Bearer " + token,
     "Accept": "application/vnd.github+json"
   };
-  const opts = { method, headers };
+  const opts = { method: method, headers: headers };
   if (body) opts.body = JSON.stringify(body);
   return fetch("https://api.github.com" + url, opts);
 }
@@ -285,7 +549,7 @@ async function ghApi(url, method, token, body = null) {
 async function startCloudBuild() {
   const token = document.getElementById("ghToken").value.trim();
   const repo = document.getElementById("repoName").value.trim();
-  if (!token) return alert("Inserisci il tuo GitHub Personal Access Token!");
+  if (!token) return alert("Inserisci il tuo GitHub Token (ghp_...) nella casella in alto!");
 
   localStorage.setItem("foldstudio_token", token);
   const btn = document.getElementById("buildBtn");
@@ -296,44 +560,46 @@ async function startCloudBuild() {
   try {
     logStatus("Connessione a GitHub...");
     const userRes = await ghApi("/user", "GET", token);
-    if (!userRes.ok) throw new Error("Token non valido!");
+    if (!userRes.ok) throw new Error("Token non valido! Controlla di aver copiato tutto il codice ghp_...");
     const user = await userRes.json();
     const owner = user.login;
-    logStatus("Autenticato come: " + owner);
+    logStatus("Connesso come: " + owner);
 
-    // 1. Crea il repository se non esiste
-    logStatus("Verifica/Creazione repository " + repo + "...");
+    logStatus("Creazione/Verifica progetto " + repo + "...");
     await ghApi("/user/repos", "POST", token, { name: repo, private: true, auto_init: true });
+    await new Promise(function(r) { setTimeout(r, 2000); });
 
-    // 2. Carica tutti i file del progetto
-    for (const [path, content] of Object.entries(projectFiles)) {
-      logStatus("Invio file: " + path);
+    const entries = Object.entries(projectFiles);
+    for (let i = 0; i < entries.length; i++) {
+      const path = entries[i][0];
+      const content = entries[i][1];
+      logStatus("Caricamento (" + (i + 1) + "/" + entries.length + "): " + path);
+      const apiUrl = "/repos/" + owner + "/" + repo + "/contents/" + path;
       let sha = null;
-      const existing = await ghApi(\`/repos/\${owner}/\${repo}/contents/\${path}\`, "GET", token);
+      const existing = await ghApi(apiUrl, "GET", token);
       if (existing.ok) {
         const data = await existing.json();
         sha = data.sha;
       }
-      const payload = { message: "Update " + path + " via FoldStudio", content: toBase64(content) };
+      const payload = { message: "Update " + path, content: toBase64(content) };
       if (sha) payload.sha = sha;
-      const putRes = await ghApi(\`/repos/\${owner}/\${repo}/contents/\${path}\`, "PUT", token, payload);
-      if (!putRes.ok) throw new Error("Errore caricamento " + path);
+      const putRes = await ghApi(apiUrl, "PUT", token, payload);
+      if (!putRes.ok) throw new Error("Errore su " + path + " (Assicurati che il Token abbia i permessi repo e workflow)");
     }
 
-    logStatus("Codice inviato! Avvio compilazione cloud...");
-    await ghApi(\`/repos/\${owner}/\${repo}/actions/workflows/build.yml/dispatches\`, "POST", token, { ref: "main" });
+    logStatus("Avvio server di compilazione Android...");
+    await ghApi("/repos/" + owner + "/" + repo + "/actions/workflows/build.yml/dispatches", "POST", token, { ref: "main" });
 
-    // 3. Monitora la compilazione ogni 6 secondi
-    logStatus("Server cloud attivo (richiede ~90 sec)...");
+    logStatus("Compilazione APK in corso (~90 secondi)...");
     let completed = false;
     while (!completed) {
-      await new Promise(r => setTimeout(r, 6000));
-      const runsRes = await ghApi(\`/repos/\${owner}/\${repo}/actions/runs?per_page=1\`, "GET", token);
+      await new Promise(function(r) { setTimeout(r, 7000); });
+      const runsRes = await ghApi("/repos/" + owner + "/" + repo + "/actions/runs?per_page=1", "GET", token);
       const runsData = await runsRes.json();
       const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
 
       if (latestRun) {
-        logStatus("Stato: " + latestRun.status + "...");
+        logStatus("Stato server: " + latestRun.status + "...");
         if (latestRun.status === "completed") {
           completed = true;
           if (latestRun.conclusion === "success") {
@@ -342,7 +608,7 @@ async function startCloudBuild() {
             dlLink.href = latestRun.html_url;
             document.getElementById("downloadContainer").classList.remove("hidden");
           } else {
-            logStatus("❌ Errore di compilazione. Apri il link per i dettagli: " + latestRun.html_url);
+            logStatus("❌ Errore compilazione. Dettagli: " + latestRun.html_url);
           }
         }
       }
@@ -355,8 +621,7 @@ async function startCloudBuild() {
   }
 }
 
-// Avvio iniziale
-window.onload = () => {
+window.onload = function() {
   const saved = localStorage.getItem("foldstudio_token");
   if (saved) document.getElementById("ghToken").value = saved;
   selectFile(activeFile);
